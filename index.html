@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>土風舞影片資料庫</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .videos {
+            margin-top: 15px;
+        }
+        iframe {
+            width: 320px;
+            height: 180px;
+            margin-right: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>土風舞影片資料庫</h1>
+
+<div id="content">資料載入中…</div>
+
+<script>
+    // 你的 CSV 試算表網址（已替換）
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT4S7N1Tml3_IIF_Uda6AaJpH67BToztbEgqjsVwvVVbkjzPMZXqMST9ce3Bn4H-iUHegPsQeLQug9e/pub?gid=0&single=true&output=csv";
+
+    // 讀取 CSV（加時間戳避免 cache）
+    fetch(CSV_URL + "&t=" + new Date().getTime())
+        .then(res => res.text())
+        .then(csv => {
+            const rows = csv.split("\n");   // 所有列
+            const contentDiv = document.getElementById("content");
+            contentDiv.innerHTML = "";
+
+            // 取第 1–40 列
+            rows.slice(1, 41).forEach(row => {
+                const cols = row.split(",");
+
+                const seq = cols[1];     // B 舞序編號
+                const name = cols[2];    // C 舞碼名稱
+                const country = cols[3]; // D 國家名稱
+                const type = cols[4];    // E 舞蹈類型
+                const link1 = cols[5];   // F 影片1
+                const link2 = cols[6];   // G 影片2
+
+                const embed1 = link1 ? convertToEmbed(link1) : "";
+                const embed2 = link2 ? convertToEmbed(link2) : "";
+
+                contentDiv.innerHTML += `
+                    <div class="item">
+                        <h2>${seq} - ${name}</h2>
+                        <p><b>國家：</b>${country}</p>
+                        <p><b>舞蹈類型：</b>${type}</p>
+
+                        <div class="videos">
+                            ${embed1}
+                            ${embed2}
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+    // YouTube 連結轉 iframe
+    function convertToEmbed(url) {
+        if (!url.includes("youtu")) return "";
+
+        let videoId = "";
+
+        // youtu.be/xxxx
+        if (url.includes("youtu.be")) {
+            videoId = url.split("youtu.be/")[1];
+        }
+        // youtube.com/watch?v=xxxx
+        else if (url.includes("watch?v=")) {
+            videoId = url.split("watch?v=")[1];
+        }
+
+        // 去除多餘參數
+        if (videoId.includes("&")) {
+            videoId = videoId.split("&")[0];
+        }
+
+        return `
+            <iframe 
+                src="https://www.youtube.com/embed/${videoId}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        `;
+    }
+</script>
+
+</body>
+</html>
